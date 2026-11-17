@@ -335,5 +335,68 @@ document.getElementById("adminLogout").onclick = async () => {
 };
 </script>
 
+<script>
+async function showPackages() {
+  selected = null;
+
+  const area = document.getElementById("packages");
+  area.innerHTML = "Loading available packages...";
+
+  const { data, error } = await dgClient
+    .from("packages")
+    .select("id, network, package_name, data_amount, price")
+    .eq("is_active", true)
+    .eq("network", network)
+    .order("id", { ascending: true });
+
+  if (error) {
+    area.textContent = "Could not load packages. Please try again.";
+    console.error(error);
+    return;
+  }
+
+  area.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    area.textContent = "No packages currently available for this network.";
+    return;
+  }
+
+  data.forEach(bundle => {
+    const button = document.createElement("button");
+    button.className = "package";
+
+    const heading = document.createElement("h3");
+    heading.textContent = bundle.data_amount;
+
+    const description = document.createElement("p");
+    description.textContent = bundle.network + " Data";
+
+    const price = document.createElement("div");
+    price.className = "price";
+    price.textContent = "GH₵" + Number(bundle.price).toFixed(2);
+
+    button.append(heading, description, price);
+
+    button.onclick = () => {
+      document.querySelectorAll(".package")
+        .forEach(item => item.classList.remove("active"));
+
+      button.classList.add("active");
+
+      selected = {
+        size: bundle.data_amount,
+        price: Number(bundle.price),
+        name: bundle.package_name
+      };
+    };
+
+    area.appendChild(button);
+  });
+}
+
+showPackages();
+</script>
+
 </body>
 </html>
