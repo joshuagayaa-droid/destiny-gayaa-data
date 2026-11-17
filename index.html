@@ -197,5 +197,143 @@ function placeOrder(){
 
 showPackages();
 </script>
+
+<!-- DESTINY GAYAA DIGITAL ADMIN LOGIN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+#adminOpen {
+  position:fixed;
+  right:15px;
+  bottom:18px;
+  z-index:9999;
+  background:#101a30;
+  color:white;
+  border:2px solid #d9a63c;
+  padding:13px 18px;
+  border-radius:12px;
+  font-weight:bold;
+}
+#adminPanel {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  background:#101a30;
+  color:white;
+  padding:25px;
+  font-family:Arial,sans-serif;
+}
+#adminPanel input {
+  display:block;
+  width:100%;
+  box-sizing:border-box;
+  padding:14px;
+  margin:12px 0;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+#adminPanel button {
+  padding:13px;
+  border:0;
+  border-radius:8px;
+  margin:5px 0;
+}
+#adminMessage { color:#f0c45b; }
+</style>
+
+<button id="adminOpen">ADMIN LOGIN</button>
+
+<div id="adminPanel">
+  <h2>DESTINY GAYAA DIGITAL</h2>
+  <h3>Administrator Login</h3>
+
+  <input id="adminEmail" type="email"
+    placeholder="Administrator email">
+
+  <input id="adminPassword" type="password"
+    placeholder="Password">
+
+  <button id="adminLogin" style="background:#d9a63c">
+    Sign In
+  </button>
+
+  <button id="adminClose">Close</button>
+
+  <p id="adminMessage"></p>
+
+  <div id="adminWelcome" style="display:none">
+    <h3>Admin Dashboard</h3>
+    <p>Welcome, Destiny.</p>
+    <p>Your administrator account is verified.</p>
+    <button id="adminLogout">Sign Out</button>
+  </div>
+</div>
+
+<script>
+const DG_SUPABASE_URL =
+"https://xwxrthjknwimggsquenc.supabase.co";
+
+const DG_SUPABASE_KEY =
+"sb_publishable_deTVkpCyTbtUv23JEQ2Wnw_rQ9ZlSnQ";
+
+const dgClient = window.supabase.createClient(
+  DG_SUPABASE_URL,
+  DG_SUPABASE_KEY
+);
+
+const adminPanel = document.getElementById("adminPanel");
+const adminMessage = document.getElementById("adminMessage");
+
+document.getElementById("adminOpen").onclick = () => {
+  adminPanel.style.display = "block";
+};
+
+document.getElementById("adminClose").onclick = () => {
+  adminPanel.style.display = "none";
+};
+
+document.getElementById("adminLogin").onclick = async () => {
+  adminMessage.textContent = "Checking login...";
+
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value;
+
+  const { data, error } = await dgClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    adminMessage.textContent = error.message;
+    return;
+  }
+
+  const { data: profile, error: profileError } = await dgClient
+    .from("user_profiles")
+    .select("full_name, role")
+    .eq("id", data.user.id)
+    .single();
+
+  if (profileError || profile.role !== "admin") {
+    await dgClient.auth.signOut();
+    adminMessage.textContent =
+      "Administrator access not verified.";
+    return;
+  }
+
+  adminMessage.textContent = "Administrator verified!";
+  document.getElementById("adminWelcome").style.display = "block";
+  document.getElementById("adminEmail").style.display = "none";
+  document.getElementById("adminPassword").style.display = "none";
+  document.getElementById("adminLogin").style.display = "none";
+};
+
+document.getElementById("adminLogout").onclick = async () => {
+  await dgClient.auth.signOut();
+  location.reload();
+};
+</script>
+
 </body>
 </html>
