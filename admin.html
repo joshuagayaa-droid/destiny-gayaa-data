@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DESTINY GAYAA DATA | Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#f3f5fa;color:#172033;font-family:Arial,sans-serif}
+    header{background:#101d3a;color:white;padding:20px 16px}
+    header h2{margin:0 0 5px;color:#f5b82e}
+    header p{margin:0;font-size:13px;color:#d5dced}
+    main{padding:15px;max-width:900px;margin:auto}
+    .status{background:white;padding:14px;border-radius:12px;margin-bottom:14px;font-size:14px}
+    .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:15px}
+    button{border:0;border-radius:8px;padding:11px 14px;font-weight:bold;cursor:pointer}
+    .tab{background:#e0e6f1;color:#172033;white-space:nowrap}
+    .tab.active{background:#172b50;color:white}
+    .panel{display:none}
+    .panel.active{display:block}
+    .card{background:white;padding:16px;border-radius:12px;margin-bottom:13px;box-shadow:0 2px 8px #0000000a}
+    h3{margin:0 0 14px}
+    input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccd3df;border-radius:8px;font-size:15px;background:white}
+    label{font-size:13px;font-weight:bold}
+    .primary{background:#f5b82e;color:#172033;width:100%;padding:13px}
+    .secondary{background:#172b50;color:white}
+    .danger{background:#ffe3e3;color:#a30000}
+    .item{border-top:1px solid #edf0f5;padding:13px 0;font-size:14px;line-height:1.6}
+    .item:first-of-type{border-top:0}
+    .muted{color:#68758b;font-size:12px}
+    .pill{display:inline-block;background:#fff0c4;color:#735000;padding:4px 8px;border-radius:20px;font-size:11px}
+    .error{color:#b00020}
+    .success{color:#087b42}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .stat{background:#f3f6fc;padding:13px;border-radius:9px}
+    .stat strong{display:block;font-size:23px;margin-top:5px}
+    #dashboard{display:none}
+    @media(max-width:420px){.grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>DESTINY GAYAA DATA</h2>
+  <p>Administrator Dashboard</p>
+</header>
+
+<main>
+  <div class="status" id="message">Checking administrator access...</div>
+
+  <div id="dashboard">
+    <div class="card">
+      <strong id="adminName">Administrator</strong>
+      <p class="muted">Manage your data store from here.</p>
+      <button class="danger" onclick="logout()">Log out</button>
+    </div>
+
+    <div class="grid" style="margin-bottom:15px">
+      <div class="stat">Packages<strong id="packageCount">0</strong></div>
+      <div class="stat">Orders<strong id="orderCount">0</strong></div>
+      <div class="stat">Payments<strong id="paymentCount">0</strong></div>
+      <div class="stat">Customers<strong id="customerCount">0</strong></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('packages',this)">Packages</button>
+      <button class="tab" onclick="showTab('orders',this)">Orders</button>
+      <button class="tab" onclick="showTab('payments',this)">Payments</button>
+      <button class="tab" onclick="showTab('customers',this)">Customers</button>
+    </div>
+
+    <section class="panel active" id="packages">
+      <div class="card">
+        <h3>Add a data package</h3>
+        <form id="packageForm">
+          <label>Network</label>
+          <select id="network" required>
+            <option value="MTN">MTN</option>
+            <option value="Telecel">Telecel</option>
+            <option value="AT">AT</option>
+          </select>
+
+          <label>Package name</label>
+          <input id="packageName" placeholder="Example: MTN 1GB" required>
+
+          <label>Data amount</label>
+          <input id="dataAmount" placeholder="Example: 1GB" required>
+
+          <label>Price (GH₵)</label>
+          <input id="price" type="number" min="0.01" step="0.01" placeholder="5.00" required>
+
+          <button class="primary" type="submit">Add package</button>
+        </form>
+        <p id="packageMessage" class="muted"></p>
+      </div>
+      <div class="card">
+        <h3>All packages</h3>
+        <div id="packageList">Loading packages...</div>
+      </div>
+    </section>
+
+    <section class="panel" id="orders">
+      <div class="card">
+        <h3>Customer orders</h3>
+        <div id="orderList">Loading orders...</div>
+      </div>
+    </section>
+
+    <section class="panel" id="payments">
+      <div class="card">
+        <h3>Payment records</h3>
+        <div id="paymentList">Loading payments...</div>
+      </div>
+    </section>
+
+    <section class="panel" id="customers">
+      <div class="card">
+        <h3>Customer profiles</h3>
+        <div id="customerList">Loading customers...</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const SUPABASE_URL = "https://xwxrthjknwimggsquenc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_deTVkpCyTbtUv23JEQ2Wnw_rQ9ZlSnQ";
+
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const message = document.getElementById("message");
+
+  function showTab(name, button) {
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.getElementById(name).classList.add("active");
+    button.classList.add("active");
+  }
+
+  function safe(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;",
+      '"':"&quot;", "'":"&#39;"
+    }[c]));
+  }
+
+  async function startDashboard() {
+    if (SUPABASE_KEY.includes("PASTE_YOUR")) {
+      message.innerHTML = '<span class="error">Add your existing Supabase publishable key in the code first.</span>';
+      return;
+    }
+
+    const { data: sessionData, error: sessionError } =
+      await db.auth.getSession();
+
+    if (sessionError || !sessionData.session) {
+      message.innerHTML =
+        '<span class="error">You are not logged in. Open your main store, log in as administrator, then return here.</span>';
+      return;
+    }
+
+    const user = sessionData.session.user;
+
+    const { data: profile, error: profileError } = await db
+      .from("user_profiles")
+      .select("full_name, role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== "admin") {
+      message.innerHTML =
+        '<span class="error">Access denied. This account does not have administrator permission.</span>';
+      return;
+    }
+
+    document.getElementById("adminName").textContent =
+      profile.full_name || user.email || "Administrator";
+
+    message.innerHTML = '<span class="success">Administrator verified. Dashboard connected.</span>';
+    document.getElementById("dashboard").style.display = "block";
+
+    await loadAll();
+  }
+
+  async function loadAll() {
+    await Promise.all([
+      loadPackages(),
+      loadOrders(),
+      loadPayments(),
+      loadCustomers()
+    ]);
+  }
+
+  async function loadPackages() {
+    const { data, error } = await db
+      .from("packages")
+      .select("*")
+      .order("id", { ascending: false });
+
+    if (error) {
+      document.getElementById("packageList").textContent = error.message;
+      return;
+    }
+
+    document.getElementById("packageCount").textContent = data.length;
+
+    document.getElementById("packageList").innerHTML = data.length
+      ? data.map(p => `
+        <div class="item">
+          <strong>${safe(p.package_name)}</strong><br>
+          ${safe(p.network)} · ${safe(p.data_amount)} · GH₵${safe(p.price)}<br>
+          <span class="pill">${p.is_active ? "Active" : "Inactive"}</span><br>
+          <button class="secondary" onclick="togglePackage(${Number(p.id)},${!p.is_active})">
+            ${p.is_active ? "Deactivate" : "Activate"}
+          </button>
+        </div>
+      `).join("")
+      : "No packages have been added yet.";
+  }
+
+  document.getElementById("packageForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const button = this.querySelector("button");
+    button.disabled = true;
+    document.getElementById("packageMessage").textContent = "Saving package...";
+
+    const packageData = {
+      network: document.getElementById("network").value,
+      package_name: document.getElementById("packageName").value.trim(),
+      data_amount: document.getElementById("dataAmount").value.trim(),
+      price: Number(document.getElementById("price").value),
+      is_active: true
+    };
+
+    const { error } = await db.from("packages").insert(packageData);
+
+    button.disabled = false;
+
+    if (error) {
+      document.getElementById("packageMessage").textContent = error.message;
+      return;
+    }
+
+    this.reset();
+    document.getElementById("packageMessage").textContent = "Package added successfully.";
+    await loadPackages();
+  });
+
+  async function togglePackage(id, active) {
+    const { error } = await db
+      .from("packages")
+      .update({ is_active: active })
+      .eq("id", id);
+
+    if (error) {
+      alert("Could not update package: " + error.message);
+      return;
+    }
+
+    await loadPackages();
+  }
+
+  async function loadOrders() {
+    const { data, error } = await db
+      .from("orders")
+      .select("*")
+      .order("id", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      document.getElementById("orderList").textContent = error.message;
+      return;
+    }
+
+    document.getElementById("orderCount").textContent = data.length;
+
+    document.getElementById("orderList").innerHTML = data.length
+      ? data.map(o => `
+        <div class="item">
+          <strong>Order #${safe(o.id)}</strong><br>
+          Phone: ${safe(o.customer_phone)}<br>
+          Network: ${safe(o.network)}<br>
+          Package: ${safe(o.package_name)}<br>
+          Amount: GH₵${safe(o.amount)}<br>
+          Status: <span class="pill">${safe(o.status)}</span><br>
+          <label>Update order status</label>
+          <select id="orderStatus${Number(o.id)}">
+            ${["pending","processing","completed","failed","cancelled"].map(s =>
+              `<option value="${s}" ${o.status === s ? "selected" : ""}>${s}</option>`
+            ).join("")}
+          </select>
+          <button class="secondary" onclick="updateOrder(${Number(o.id)})">Save status</button>
+        </div>
+      `).join("")
+      : "No orders yet.";
+  }
+
+  async function updateOrder(id) {
+    const status = document.getElementById("orderStatus" + id).value;
+
+    const { error } = await db
+      .from("orders")
+      .update({ status })
+      .eq("id", id);
+
+    if (error) {
+      alert("Order update failed: " + error.message);
+      return;
+    }
+
+    alert("Order status updated.");
+    await loadOrders();
+  }
+
+  async function loadPayments() {
+    const { data, error } = await db
+      .from("payments")
+      .select("*")
+      .order("id", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      document.getElementById("paymentList").textContent = error.message;
+      return;
+    }
+
+    document.getElementById("paymentCount").textContent = data.length;
+
+    document.getElementById("paymentList").innerHTML = data.length
+      ? data.map(p => `
+        <div class="item">
+          <strong>Payment #${safe(p.id)}</strong><br>
+          Order ID: ${safe(p.order_id)}<br>
+          Phone: ${safe(p.customer_phone)}<br>
+          Amount: GH₵${safe(p.amount)}<br>
+          Reference: ${safe(p.payment_reference)}<br>
+          Status: <span class="pill">${safe(p.status)}</span>
+        </div>
+      `).join("")
+      : "No payment records yet.";
+  }
+
+  async function loadCustomers() {
+    const { data, error } = await db
+      .from("user_profiles")
+      .select("id, full_name, role, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      document.getElementById("customerList").textContent = error.message;
+      return;
+    }
+
+    document.getElementById("customerCount").textContent = data.length;
+
+    document.getElementById("customerList").innerHTML = data.length
+      ? data.map(c => `
+        <div class="item">
+          <strong>${safe(c.full_name || "Unnamed customer")}</strong><br>
+          Role: ${safe(c.role)}<br>
+          <span class="muted">Account ID: ${safe(c.id)}</span>
+        </div>
+      `).join("")
+      : "No customer profiles found.";
+  }
+
+  async function logout() {
+    const { error } = await db.auth.signOut();
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    window.location.href = "./";
+  }
+
+  startDashboard();
+</script>
+</body>
+</html>
