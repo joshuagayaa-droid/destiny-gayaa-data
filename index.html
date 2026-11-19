@@ -384,11 +384,12 @@ async function showPackages() {
 
       button.classList.add("active");
 
-      selected = {
-        size: bundle.data_amount,
-        price: Number(bundle.price),
-        name: bundle.package_name
-      };
+selected = {
+  id: bundle.id,
+  size: bundle.data_amount,
+  price: Number(bundle.price),
+  name: bundle.package_name
+};
     };
 
     area.appendChild(button);
